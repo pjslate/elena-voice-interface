@@ -1,35 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Elena Voice Interface</title>
+  <meta charset="UTF-8">
+  <title>Elena Pavlova – Voice Conversation</title>
 </head>
 <body>
+  <h1>Elena Pavlova – Voice Conversation</h1>
 
-<h2>Elena Voice Test</h2>
+  <p>Press the microphone, speak, and Elena will respond vocally.</p>
 
-<textarea id="inputText" rows="4" cols="50" placeholder="Type something for Elena to say..."></textarea>
-<br><br>
-<button onclick="speakText()">Speak</button>
+  <button id="micButton">🎙️ Speak</button>
+  <button id="stopButton">⏹️ Stop</button>
 
-<script>
-async function speakText() {
-  const text = document.getElementById("inputText").value;
+  <p><strong>You said:</strong> <span id="userText"></span></p>
 
-  const response = await fetch("https://polished-pond-ceb7.slatterypt4x.workers.dev", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
-  });
+  <audio id="audioPlayer" controls></audio>
 
-  const audioData = await response.arrayBuffer();
-  const audioBlob = new Blob([audioData], { type: "audio/mpeg" });
-  const audioUrl = URL.createObjectURL(audioBlob);
+  <script>
+    const workerUrl = "https://polished-pond-ceb7.slatterypt4x.workers.dev/";
+    const micButton = document.getElementById("micButton");
+    const stopButton = document.getElementById("stopButton");
+    const userTextSpan = document.getElementById("userText");
+    const audioPlayer = document.getElementById("audioPlayer");
 
-  const audio = new Audio(audioUrl);
-  audio.play();
-}
-</script>
+    let recognition = null;
+    let recognizing = false;
 
+    // Set up Web Speech API (Chrome/Edge)
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        recognizing = true;
+        micButton.textContent = "🎙️ Listening...";
+      };
+
+      recognition.onend = () => {
+        recognizing = false;
+        micButton.textContent = "🎙️ Speak";
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        recognizing = false;
+        micButton.textContent = "🎙️ Speak";
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userTextSpan.textContent = transcript;
+        sendToElena(transcript);
+      };
+    } else {
+      micButton.disabled = true;
+      alert("Speech recognition is not supported in this browser.");
+    }
+
+    micButton.onclick = () => {
+      if (!recognition) return;
+      if (recognizing) {
+        recognition.stop();
+      } else {
+        recognition.start();
+      }
+    };
+
+    stopButton.onclick = () => {
+      if (recognition && recognizing) {
+        recognition.stop();
+      }
+    };
+
+    async function sendToElena(text) {
+      try {
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Worker error:", errorText);
+          return;
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
+        audioPlayer.src = url;
+        audioPlayer.play();
+
+      } catch (err) {
+        console.error("Failed to contact Elena:", err);
+      }
+    }
+  </script>
 </body>
 </html>
