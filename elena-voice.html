@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Elena Voice Interface</title>
+</head>
+<body>
+
+<h2>Elena Voice Test</h2>
+
+<textarea id="inputText" rows="4" cols="50" placeholder="Type something for Elena to say..."></textarea>
+<br><br>
+<button onclick="speakText()">Speak</button>
+
+<script>
+async function speakText() {
+  const text = document.getElementById("inputText").value;
+
+  const response = await fetch("https://polished-pond-ceb7.slatterypt4x.workers.dev", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+
+  const audioData = await response.arrayBuffer();
+  const audioBlob = new Blob([audioData], { type: "audio/mpeg" });
+  const audioUrl = URL.createObjectURL(audioBlob);
+
+  const audio = new Audio(audioUrl);
+  audio.play();
+}
+</script>
+
+</body>
+</html>
