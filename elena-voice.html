@@ -1,52 +1,147 @@
-let recognition;
-let recognizing = false;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Elena Pavlova – Voice Conversation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      line-height: 1.6;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 18px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    #micButton {
+      background-color: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+    #stopButton {
+      background-color: #5bc0de;
+      color: white;
+      border: none;
+      border-radius: 6px;
+    }
+    audio {
+      margin-top: 20px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
 
-if ('webkitSpeechRecognition' in window) {
-  recognition = new webkitSpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+  <h1>Elena Pavlova – Voice Conversation</h1>
+  <p>Press the microphone, speak, and Elena will respond in her voice.</p>
 
-  // CRITICAL FIXES:
-  recognition.continuous = true;        // keeps the mic open
-  recognition.stop();                   // ensure clean state
+  <button id="micButton">🎙️ Speak</button>
+  <button id="stopButton">⏹️ Stop</button>
 
-  recognition.onstart = () => {
-    recognizing = true;
-    micButton.textContent = "🎙️ Listening...";
-  };
+  <p><strong>You said:</strong> <span id="userText"></span></p>
 
-  recognition.onend = () => {
-    recognizing = false;
-    micButton.textContent = "🎙️ Speak";
-  };
+  <audio id="audioPlayer" controls></audio>
 
-  recognition.onerror = (event) => {
-    console.error("Speech recognition error:", event.error);
-    recognizing = false;
-    micButton.textContent = "🎙️ Speak";
-  };
+  <script>
+    const workerUrl = "https://polished-pond-ceb7.slatterypt4x.workers.dev/";
+    const micButton = document.getElementById("micButton");
+    const stopButton = document.getElementById("stopButton");
+    const userTextSpan = document.getElementById("userText");
+    const audioPlayer = document.getElementById("audioPlayer");
 
-  recognition.onresult = (event) => {
-    const transcript = event.results[event.results.length - 1][0].transcript;
-    userTextSpan.textContent = transcript;
-    sendToElena(transcript);
-  };
-}
+    let recognition = null;
+    let recognizing = false;
 
-micButton.onclick = () => {
-  if (!recognition) return;
+    // Initialize Web Speech API
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.continuous = true;  // CRITICAL FIX
 
-  // Force mic permission prompt
-  navigator.mediaDevices.getUserMedia({ audio: true })
-    .then(() => {
-      if (!recognizing) {
-        recognition.start();
-      } else {
+      recognition.onstart = () => {
+        recognizing = true;
+        micButton.textContent = "🎙️ Listening...";
+      };
+
+      recognition.onend = () => {
+        recognizing = false;
+        micButton.textContent = "🎙️ Speak";
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error:", event.error);
+        recognizing = false;
+        micButton.textContent = "🎙️ Speak";
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript;
+        userTextSpan.textContent = transcript;
+        sendToElena(transcript);
+      };
+    } else {
+      micButton.disabled = true;
+      alert("Speech recognition is not supported in this browser.");
+    }
+
+    // Microphone button logic
+    micButton.onclick = () => {
+      if (!recognition) return;
+
+      // Force mic permission prompt
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => {
+          if (!recognizing) {
+            recognition.start();
+          } else {
+            recognition.stop();
+          }
+        })
+        .catch(err => {
+          console.error("Microphone permission denied:", err);
+        });
+    };
+
+    stopButton.onclick = () => {
+      if (recognition && recognizing) {
         recognition.stop();
       }
-    })
-    .catch(err => {
-      console.error("Microphone permission denied:", err);
-    });
-};
+    };
+
+    // Send text to Cloudflare Worker (Elena's brain + voice)
+    async function sendToElena(text) {
+      try {
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Worker error:", errorText);
+          return;
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(blob);
+        audioPlayer.src = url;
+        audioPlayer.play();
+
+      } catch (err) {
+        console.error("Failed to contact Elena:", err);
+      }
+    }
+  </script>
+
+</body>
+</html>
