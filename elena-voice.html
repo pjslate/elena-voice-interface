@@ -9,6 +9,7 @@
       max-width: 700px;
       margin: 40px auto;
       line-height: 1.6;
+      text-align: center;
     }
     button {
       padding: 12px 20px;
@@ -28,21 +29,36 @@
       border: none;
       border-radius: 6px;
     }
+    #portrait {
+      width: 260px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
     audio {
       margin-top: 20px;
       width: 100%;
+    }
+    #elenaReply {
+      margin-top: 20px;
+      font-style: italic;
+      color: #444;
     }
   </style>
 </head>
 <body>
 
   <h1>Elena Pavlova – Voice Conversation</h1>
+
+  <!-- Elena's portrait -->
+  <img id="portrait" src="Pavlova.jpg" alt="Elena Pavlova">
+
   <p>Press the microphone, speak, and Elena will respond in her voice.</p>
 
   <button id="micButton">🎙️ Speak</button>
   <button id="stopButton">⏹️ Stop</button>
 
   <p><strong>You said:</strong> <span id="userText"></span></p>
+  <p><strong>Elena replied:</strong> <span id="elenaReply"></span></p>
 
   <audio id="audioPlayer" controls></audio>
 
@@ -51,6 +67,7 @@
     const micButton = document.getElementById("micButton");
     const stopButton = document.getElementById("stopButton");
     const userTextSpan = document.getElementById("userText");
+    const elenaReplySpan = document.getElementById("elenaReply");
     const audioPlayer = document.getElementById("audioPlayer");
 
     let recognition = null;
@@ -62,7 +79,7 @@
       recognition.lang = "en-US";
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
-      recognition.continuous = true;  // CRITICAL FIX
+      recognition.continuous = true;
 
       recognition.onstart = () => {
         recognizing = true;
@@ -94,7 +111,6 @@
     micButton.onclick = () => {
       if (!recognition) return;
 
-      // Force mic permission prompt
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(() => {
           if (!recognizing) {
@@ -114,27 +130,38 @@
       }
     };
 
-    // Send text to Cloudflare Worker (Elena's brain + voice)
+    // Send text to Cloudflare Worker
     async function sendToElena(text) {
       try {
         const response = await fetch(workerUrl, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text })
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Worker error:", errorText);
+          console.error("Worker error:", await response.text());
           return;
         }
 
-        const arrayBuffer = await response.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
-        const url = URL.createObjectURL(blob);
-        audioPlayer.src = url;
+        // Parse JSON from Worker
+        const data = await response.json();
+
+        // Show Elena's text reply
+        elenaReplySpan.textContent = data.npc.assistant_response;
+
+        // Decode base64 audio
+        const base64 = data.audio_base64;
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+
+        const audioBlob = new Blob([bytes], { type: "audio/mpeg" });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        audioPlayer.src = audioUrl;
         audioPlayer.play();
 
       } catch (err) {
