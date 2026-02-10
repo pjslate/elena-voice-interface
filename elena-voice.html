@@ -23,12 +23,12 @@
       color: #3a2f2f;
     }
 
-    .divider {
-      width: 200px;
-      height: 2px;
-      background: linear-gradient(to right, transparent, #b08d57, transparent);
-      margin: 20px auto 40px auto;
-    }
+  .divider {
+  width: 240px;
+  height: 3px;
+  margin: 20px auto 40px auto;
+  background: linear-gradient(to right, #000 0%, #d4af37 50%, #000 100%);
+}
 
     #portrait {
   width: 260px;
@@ -107,10 +107,10 @@ button:hover {
 }
 
   
-  .moser-ornament {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto 40px auto;
+ .moser-ornament {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 30px auto;
   background:
     radial-gradient(circle at center, #d4af37 0%, #000 70%, transparent 71%),
     repeating-conic-gradient(
@@ -119,11 +119,12 @@ button:hover {
       transparent 12deg 24deg
     );
   mask:
-    radial-gradient(circle at center, transparent 40%, black 41%);
+    radial-gradient(circle at center, black 40%, transparent 41%);
   -webkit-mask:
-    radial-gradient(circle at center, transparent 40%, black 41%);
+    radial-gradient(circle at center, black 40%, transparent 41%);
   opacity: 0.9;
 }
+
 
 .listening #micButton {
   box-shadow: 0 0 20px 6px rgba(212, 175, 55, 0.6);
@@ -136,6 +137,7 @@ button:hover {
 
   .speaking #portrait {
   animation: goldPulse 2.4s ease-in-out infinite;
+    transition: box-shadow 0.4x ease; 
 }
 
 @keyframes goldPulse {
@@ -144,7 +146,10 @@ button:hover {
   100% { box-shadow: 0 0 0px rgba(212, 175, 55, 0.0); }
 }
 
-  
+  #portrait:hover {
+  box-shadow: 0 0 18px rgba(212, 175, 55, 0.5);
+}
+
   </style>
 </head>
 
@@ -199,30 +204,18 @@ button:hover {
       recognition.maxAlternatives = 1;
       recognition.continuous = true;
 
-      recognition.onstart = () => {
-        recognizing = true;
-        micButton.textContent = "🎙️ Listening...";
-      };
-
-
 recognition.onstart = () => {
   recognizing = true;
   micButton.textContent = "🎙️ Listening...";
-  document.body.classList.add("listening");   // ADD THIS
+  document.body.classList.add("listening");
 };
 
 recognition.onend = () => {
   recognizing = false;
   micButton.textContent = "🎙️ Speak";
-  document.body.classList.remove("listening"); // ADD THIS
+  document.body.classList.remove("listening");
 };
 
-
-      
-      recognition.onend = () => {
-        recognizing = false;
-        micButton.textContent = "🎙️ Speak";
-      };
 
       recognition.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
@@ -303,6 +296,10 @@ recognition.onend = () => {
         const audioUrl = URL.createObjectURL(audioBlob);
 
         audioPlayer.src = audioUrl;
+
+document.body.classList.remove("speaking");
+
+        
         audioPlayer.play();
 
 document.body.classList.add("speaking");
@@ -323,4 +320,5 @@ audioPlayer.onended = () => {
 
 </body>
 </html>
+
 
