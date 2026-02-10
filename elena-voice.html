@@ -3,64 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <title>Elena Pavlova – Voice Conversation</title>
+
+  <!-- Vienna Secession / Jugendstil Styling -->
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: 40px auto;
-      line-height: 1.6;
+      background: #f7f2e7; /* warm cream parchment */
+      font-family: "Cormorant Garamond", serif;
+      color: #3a2f2f;
+      margin: 0;
+      padding: 40px 20px;
       text-align: center;
     }
-    button {
-      padding: 12px 20px;
-      font-size: 18px;
-      margin-right: 10px;
-      cursor: pointer;
+
+    h1 {
+      font-family: "Playfair Display", serif;
+      font-size: 42px;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      color: #3a2f2f;
     }
-    #micButton {
-      background-color: #d9534f;
-      color: white;
-      border: none;
-      border-radius: 6px;
+
+    /* Secessionist gold divider */
+    .divider {
+      width: 200px;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #b08d57, transparent);
+      margin: 20px auto 40px auto;
     }
-    #stopButton {
-      background-color: #5bc0de;
-      color: white;
-      border: none;
-      border-radius: 6px;
-    }
+
+    /* Portrait styling */
     #portrait {
       width: 260px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      border-radius: 4px;
+      border: 3px solid #b08d57; /* gold frame */
+      box-shadow: 0 0 12px rgba(0,0,0,0.15);
+      margin-bottom: 30px;
     }
+
+    /* Jugendstil buttons */
+    button {
+      padding: 14px 26px;
+      font-size: 20px;
+      font-family: "Playfair Display", serif;
+      border: 2px solid #b08d57;
+      background: #f7f2e7;
+      color: #3a2f2f;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.2s ease;
+      letter-spacing: 1px;
+    }
+
+    button:hover {
+      background: #e8dcc2;
+      transform: translateY(-2px);
+    }
+
+    #micButton {
+      border-radius: 50px;
+    }
+
+    #stopButton {
+      border-radius: 50px;
+    }
+
+    /* Remove text output entirely */
+    #userText, #elenaReply {
+      display: none;
+    }
+
+    /* Audio player styling */
     audio {
-      margin-top: 20px;
+      margin-top: 30px;
       width: 100%;
+      max-width: 500px;
+      filter: sepia(40%) saturate(80%);
     }
-    #elenaReply {
-      margin-top: 20px;
-      font-style: italic;
-      color: #444;
+
+    /* Decorative Jugendstil frame */
+    .frame {
+      border: 3px solid #b08d57;
+      padding: 30px;
+      max-width: 700px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.4);
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
     }
   </style>
 </head>
+
 <body>
 
-  <h1>Elena Pavlova – Voice Conversation</h1>
+  <h1>Elena Pavlova</h1>
+  <div class="divider"></div>
 
-  <!-- Elena's portrait -->
-  <img id="portrait" src="Pavlova.jpg" alt="Elena Pavlova">
+  <div class="frame">
 
-  <p>Press the microphone, speak, and Elena will respond in her voice.</p>
+    <!-- Elena's portrait -->
+    <img id="portrait" src="Pavlova.jpg" alt="Elena Pavlova">
 
-  <button id="micButton">🎙️ Speak</button>
-  <button id="stopButton">⏹️ Stop</button>
+    <p style="font-size: 20px; margin-bottom: 30px;">
+      Press the microphone and speak.  
+      Elena will answer in her own voice.
+    </p>
 
-  <p><strong>You said:</strong> <span id="userText"></span></p>
-  <p><strong>Elena replied:</strong> <span id="elenaReply"></span></p>
+    <button id="micButton">🎙️ Speak</button>
+    <button id="stopButton">⏹️ Stop</button>
 
-  <audio id="audioPlayer" controls></audio>
+    <!-- Hidden text fields (no UI output) -->
+    <span id="userText"></span>
+    <span id="elenaReply"></span>
+
+    <audio id="audioPlayer" controls></audio>
+
+  </div>
 
   <script>
     const workerUrl = "https://polished-pond-ceb7.slatterypt4x.workers.dev/";
@@ -144,11 +200,10 @@
           return;
         }
 
-        // Parse JSON from Worker
         const data = await response.json();
 
-        // Show Elena's text reply
-        elenaReplySpan.textContent = data.npc.assistant_response;
+        // No text displayed — audio only
+        elenaReplySpan.textContent = "";
 
         // Decode base64 audio
         const base64 = data.audio_base64;
@@ -172,3 +227,5 @@
 
 </body>
 </html>
+
+
